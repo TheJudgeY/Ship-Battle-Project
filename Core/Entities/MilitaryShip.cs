@@ -1,15 +1,11 @@
-﻿namespace Core.Entities
-{
-    public class MilitaryShip : Ship
-    {
-        internal MilitaryShip(int speed, int length, Point position, int range) : base(speed, length, position, range)
-        {
-            Type = "Military";
-        }
+﻿using Core.Entities;
+using Core.Enums;
 
-        public void Shoot()
-        {
-            Console.WriteLine($"Military ship at {Position} is shooting!");
-        }
+public class MilitaryShip : Ship
+{
+    public MilitaryShip(Point position, Direction direction)
+        : base(speed: 5, length: 3, position, direction, attackRange: 5, healRange: 0)
+    {
+        Type = "Military";
     }
 }

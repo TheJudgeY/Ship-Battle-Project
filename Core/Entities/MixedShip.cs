@@ -1,19 +1,11 @@
-﻿namespace Core.Entities
-{
-    public class MixedShip : Ship
-    {
-        internal MixedShip(int speed, int length, Point position, int range) : base(speed, length, position, range) 
-        {
-            Type = "Mixed";
-        }
-        public void Shoot()
-        {
-            Console.WriteLine($"Mixed ship at {Position} is shooting!");
-        }
+﻿using Core.Entities;
+using Core.Enums;
 
-        public void Repair()
-        {
-            Console.WriteLine($"Mixed ship at {Position} is repearing!");
-        }
+public class MixedShip : Ship
+{
+    public MixedShip(Point position, Direction direction)
+        : base(speed: 4, length: 4, position, direction, attackRange: 3, healRange: 2)
+    {
+        Type = "Mixed";
     }
 }

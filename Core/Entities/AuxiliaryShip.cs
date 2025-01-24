@@ -1,21 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Core.Entities;
+using Core.Enums;
 
-namespace Core.Entities
+public class AuxiliaryShip : Ship
 {
-    public class AuxiliaryShip : Ship
+    public AuxiliaryShip(Point position, Direction direction)
+        : base(speed: 3, length: 2, position, direction, attackRange: 0, healRange: 4)
     {
-        internal AuxiliaryShip(int speed, int length, Point position, int range) : base(speed, length, position, range)
-        {
-            Type = "Auxiliary";
-        }
-
-        public void Repair()
-        {
-            Console.WriteLine($"Auxiliary ship at {Position} is repearing!");
-        }
+        Type = "Auxiliary";
     }
 }
