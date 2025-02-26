@@ -2,6 +2,7 @@
 using BLL.Strategies;
 using Core.Entities;
 using Core.Enums;
+using System.Linq;
 
 namespace BLL.Services
 {
@@ -37,8 +38,8 @@ namespace BLL.Services
         public void Attack(Point targetPosition)
         {
             var opponentFieldService = GetOpponentFieldService();
-
             var targetShip = opponentFieldService.GetShipAt(targetPosition);
+
             if (targetShip == null)
             {
                 Console.WriteLine("Miss! No ship at the target position.");
@@ -58,8 +59,8 @@ namespace BLL.Services
         public void Heal(Point targetPosition)
         {
             var playerFieldService = GetCurrentPlayerFieldService();
-
             var targetShip = playerFieldService.GetShipAt(targetPosition);
+
             if (targetShip == null)
             {
                 Console.WriteLine("No ship at the target position.");

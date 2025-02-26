@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BLL.Abstractions\BLL.Abstractions.csproj" />
+    <ProjectReference Include="..\CompositionRoot\CompositionRoot.csproj" />
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 
@@ -19,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
 </Project>

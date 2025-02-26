@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Core.Utilities;
 
 namespace DAL.Abstractions
 {
     public interface IRepository<T>
     {
-        void Add(T entity);
-        T Get(Func<T, bool> predicate);
-        IEnumerable<T> GetAll();
-        void Remove(T entity);
-        void SaveChanges();
+        OperationResult<bool> Add(T entity);
+        OperationResult<T> Get(Func<T, bool> predicate);
+        OperationResult<List<T>> GetAll();
+        OperationResult<bool> Remove(T entity);
+        OperationResult<bool> SaveChanges();
     }
 }

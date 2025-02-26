@@ -1,72 +1,59 @@
 ﻿using DAL.Abstractions;
-using System.Text.Json;
+using Core.Utilities;
 
-namespace DAL
+namespace DAL.Repositories
 {
     public class JsonRepository<T> : IRepository<T>
     {
-        private readonly string _filePath;
+        private readonly IDataStore<T> _dataStore;
         private readonly List<T> _entities;
 
-        public JsonRepository(string filePath)
+        public JsonRepository(IDataStore<T> dataStore)
         {
-            _filePath = filePath;
+            _dataStore = dataStore;
 
-            if (File.Exists(filePath))
-            {
-                var jsonData = File.ReadAllText(filePath);
-                _entities = JsonSerializer.Deserialize<List<T>>(jsonData) ?? new List<T>();
-            }
-            else
-            {
-                _entities = new List<T>();
-            }
+            var loadResult = _dataStore.Load();
+            _entities = loadResult.IsSuccess ? loadResult.Data : new List<T>();
         }
 
-        public void Add(T entity)
+        public OperationResult<bool> Add(T entity)
         {
             if (_entities.Contains(entity))
             {
-                throw new InvalidOperationException("Entity already exists.");
+                return OperationResult<bool>.Failure("Entity already exists.");
             }
 
             _entities.Add(entity);
+            return _dataStore.Save(_entities);
         }
 
-        public T Get(Func<T, bool> predicate)
+        public OperationResult<T> Get(Func<T, bool> predicate)
         {
-            return _entities.FirstOrDefault(predicate);
+            var entity = _entities.FirstOrDefault(predicate);
+            return entity != null
+                ? OperationResult<T>.Success(entity)
+                : OperationResult<T>.Failure("Entity not found.");
         }
 
-        public IEnumerable<T> GetAll()
+        public OperationResult<List<T>> GetAll()
         {
-            return _entities.AsReadOnly();
+            return OperationResult<List<T>>.Success(_entities);
         }
 
-        public void Remove(T entity)
+        public OperationResult<bool> Remove(T entity)
         {
             if (!_entities.Contains(entity))
             {
-                throw new InvalidOperationException("Entity not found.");
+                return OperationResult<bool>.Failure("Entity not found.");
             }
 
             _entities.Remove(entity);
+            return _dataStore.Save(_entities);
         }
 
-        public void SaveChanges()
+        public OperationResult<bool> SaveChanges()
         {
-            var jsonData = JsonSerializer.Serialize(_entities, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filePath, jsonData);
-        }
-
-        private void ReloadData()
-        {
-            if (File.Exists(_filePath))
-            {
-                var jsonData = File.ReadAllText(_filePath);
-                _entities.Clear();
-                _entities.AddRange(JsonSerializer.Deserialize<List<T>>(jsonData) ?? new List<T>());
-            }
+            return _dataStore.Save(_entities);
         }
     }
 }
