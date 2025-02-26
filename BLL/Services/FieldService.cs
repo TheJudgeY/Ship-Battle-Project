@@ -1,8 +1,6 @@
-﻿using BLL.Abstractions.Helpers;
-using BLL.Abstractions.Services;
+﻿using BLL.Abstractions.Services;
+using BLL.Helper;
 using Core.Entities;
-using Core.Enums;
-using DAL.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,72 +8,70 @@ namespace BLL.Services
 {
     public class FieldService : IFieldService
     {
-        private readonly IShipHelper _shipHelper;
-        private readonly IRepository<Ship> _shipRepository;
-        private readonly Field _field;
+        public Field Field { get; }
 
-        public FieldService(Field field, IShipHelper shipHelper, IRepository<Ship> shipRepository)
+        public FieldService(Field field)
         {
-            _field = field;
-            _shipHelper = shipHelper;
-            _shipRepository = shipRepository;
+            Field = field;
         }
 
         public void AddShip(Ship ship, int fieldWidth, int fieldHeight)
         {
-            string? placementError = IsValidPlacement(ship.Position.X, ship.Position.Y, ship.Direction, ship.Length, fieldWidth, fieldHeight);
-
-            if (placementError != null)
-                throw new InvalidOperationException($"Invalid ship placement: {placementError}");
-
-            _field.Ships.Add(ship);
-            _shipRepository.Add(ship);
-            _shipRepository.SaveChanges();
+            ValidateShipPlacement(ship, fieldWidth, fieldHeight);
+            Field.Ships.Add(ship);
         }
 
         public Ship GetShipAt(Point position)
         {
-            return _shipRepository.GetAll().Data
-                .FirstOrDefault(s => _shipHelper.GetOccupiedPoints(s)
-                .Any(p => p.X == position.X && p.Y == position.Y));
+            return Field.Ships.FirstOrDefault(s => ShipHelper.GetOccupiedPoints(s).Any(p => p.X == position.X && p.Y == position.Y));
         }
 
         public IEnumerable<Ship> GetAllShips()
         {
-            return _shipRepository.GetAll().Data ?? new List<Ship>();
+            return Field.Ships;
         }
 
-        public Field GetField() => _field;
-
-        public string? IsValidPlacement(int x, int y, Direction direction, int shipLength, int fieldWidth, int fieldHeight)
+        private void ValidateShipPlacement(Ship ship, int fieldWidth, int fieldHeight)
         {
-            var occupiedPoints = new List<Point>();
-
-            for (int i = 0; i < shipLength; i++)
+            foreach (var point in ShipHelper.GetOccupiedPoints(ship))
             {
-                int projectedX = x, projectedY = y;
-                switch (direction)
+                if (point.X < 0 || point.Y < 0 || point.X >= fieldWidth || point.Y >= fieldHeight)
                 {
-                    case Direction.North: projectedY -= i; break;
-                    case Direction.South: projectedY += i; break;
-                    case Direction.East: projectedX += i; break;
-                    case Direction.West: projectedX -= i; break;
+                    throw new InvalidOperationException("Ship placement is out of bounds.");
                 }
-
-                occupiedPoints.Add(new Point(projectedX, projectedY));
-
-                if (projectedX < 0 || projectedX >= fieldWidth || projectedY < 0 || projectedY >= fieldHeight)
-                    return $"Out of bounds at ({projectedX}, {projectedY})";
             }
 
-            foreach (var existingShip in _shipRepository.GetAll().Data ?? new List<Ship>())
+            foreach (var existingShip in Field.Ships)
             {
-                var existingOccupiedPoints = _shipHelper.GetOccupiedPoints(existingShip).ToList();
-                if (occupiedPoints.Intersect(existingOccupiedPoints).Any())
-                    return $"Overlapping existing ship at {occupiedPoints.First()}";
+                var occupiedPoints = ShipHelper.GetOccupiedPoints(existingShip).ToList();
+                var bufferZone = GetBufferZone(occupiedPoints);
+
+                foreach (var point in ShipHelper.GetOccupiedPoints(ship))
+                {
+                    if (bufferZone.Any(p => p.X == point.X && p.Y == point.Y))
+                    {
+                        throw new InvalidOperationException("Ship placement violates no-adjacency rule.");
+                    }
+                }
+            }
+        }
+
+        private IEnumerable<Point> GetBufferZone(IEnumerable<Point> occupiedPoints)
+        {
+            var bufferZone = new HashSet<Point>();
+
+            foreach (var point in occupiedPoints)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        bufferZone.Add(new Point(point.X + dx, point.Y + dy));
+                    }
+                }
             }
 
-            return null;
+            return bufferZone;
         }
     }
 }

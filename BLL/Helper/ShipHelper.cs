@@ -10,19 +10,14 @@ namespace BLL.Helper
             var points = new List<Point>();
             for (int i = 0; i < ship.Length; i++)
             {
-                int x = ship.Position.X, y = ship.Position.Y;
-                switch (ship.Direction)
+                points.Add(ship.Direction switch
                 {
-                    case Core.Enums.Direction.North:
-                        y -= i; break;
-                    case Core.Enums.Direction.South:
-                        y += i; break;
-                    case Core.Enums.Direction.East:
-                        x += i; break;
-                    case Core.Enums.Direction.West:
-                        x -= i; break;
-                }
-                points.Add(new Point(x, y));
+                    Core.Enums.Direction.North => new Point(ship.Position.X, ship.Position.Y - i),
+                    Core.Enums.Direction.East => new Point(ship.Position.X + i, ship.Position.Y),
+                    Core.Enums.Direction.South => new Point(ship.Position.X, ship.Position.Y + i),
+                    Core.Enums.Direction.West => new Point(ship.Position.X - i, ship.Position.Y),
+                    _ => ship.Position
+                });
             }
             return points;
         }

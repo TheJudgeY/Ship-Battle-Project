@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLL.Abstractions", "BLL.Abs
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL.Abstractions", "DAL.Abstractions\DAL.Abstractions.csproj", "{10DE21D2-A522-4626-84E7-FDC27E90C14D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompositionRoot", "CompositionRoot\CompositionRoot.csproj", "{DE2C2C0E-59A7-4C46-B69E-C20AD5F62840}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,10 +45,6 @@ Global
 		{10DE21D2-A522-4626-84E7-FDC27E90C14D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10DE21D2-A522-4626-84E7-FDC27E90C14D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10DE21D2-A522-4626-84E7-FDC27E90C14D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE2C2C0E-59A7-4C46-B69E-C20AD5F62840}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE2C2C0E-59A7-4C46-B69E-C20AD5F62840}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE2C2C0E-59A7-4C46-B69E-C20AD5F62840}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE2C2C0E-59A7-4C46-B69E-C20AD5F62840}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
