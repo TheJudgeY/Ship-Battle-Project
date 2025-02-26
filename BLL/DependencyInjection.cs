@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using BLL.Abstractions.Factories;
-using BLL.Abstractions.Helpers;
 using BLL.Abstractions.Services;
+using BLL.Abstractions.Helpers;
+using BLL.Abstractions.Factories;
+using BLL.Services;
 using BLL.Factories;
 using BLL.Helper;
-using BLL.Services;
-using DAL.Abstractions;
 using Core.Entities;
+using Core.Enums;
+using DAL.Abstractions;
 
 namespace BLL
 {
@@ -18,21 +19,31 @@ namespace BLL
 
             services.AddSingleton<IShipFactory, DefaultShipFactory>();
 
-            services.AddTransient<IFieldService, FieldService>(provider =>
-            {
-                var shipHelper = provider.GetRequiredService<IShipHelper>();
-                var shipRepository = provider.GetRequiredService<IRepository<Ship>>();
-                return new FieldService(new Field(), shipHelper, shipRepository);
-            });
+            services.AddSingleton<IFieldService>(provider =>
+                CreateFieldService(Player.Player1, provider));
 
-            services.AddSingleton<IGameService, GameService>(provider =>
+            services.AddSingleton<IFieldService>(provider =>
+                CreateFieldService(Player.Player2, provider));
+
+            services.AddSingleton<IGameService>(provider =>
             {
-                var player1FieldService = provider.GetRequiredService<IFieldService>();
-                var player2FieldService = provider.GetRequiredService<IFieldService>();
+                var fieldServices = provider.GetServices<IFieldService>().ToList();
+
+                var player1FieldService = fieldServices[0];
+                var player2FieldService = fieldServices[1];
+
                 return new GameService(player1FieldService, player2FieldService);
             });
 
             return services;
+        }
+
+        private static IFieldService CreateFieldService(Player player, IServiceProvider provider)
+        {
+            var shipHelper = provider.GetRequiredService<IShipHelper>();
+            var shipRepository = provider.GetRequiredService<IRepository<Ship>>();
+
+            return new FieldService(player, new Field(), shipHelper, shipRepository);
         }
     }
 }

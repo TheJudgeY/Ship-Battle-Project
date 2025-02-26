@@ -2,7 +2,7 @@
 using BLL.Strategies;
 using Core.Entities;
 using Core.Enums;
-using System.Linq;
+using Core.Utilities;
 
 namespace BLL.Services
 {
@@ -10,65 +10,74 @@ namespace BLL.Services
     {
         private readonly IFieldService _player1FieldService;
         private readonly IFieldService _player2FieldService;
-
-        public Player CurrentPlayer { get; private set; }
+        private Player _currentPlayer;
 
         public GameService(IFieldService player1FieldService, IFieldService player2FieldService)
         {
             _player1FieldService = player1FieldService;
             _player2FieldService = player2FieldService;
-            CurrentPlayer = Player.Player1;
+            _currentPlayer = Player.Player1;
+        }
+
+        public void SetCurrentPlayer(Player player)
+        {
+            _currentPlayer = player;
         }
 
         public void SwitchTurn()
         {
-            CurrentPlayer = CurrentPlayer == Player.Player1 ? Player.Player2 : Player.Player1;
+            _currentPlayer = _currentPlayer == Player.Player1 ? Player.Player2 : Player.Player1;
+        }
+
+        public Player GetCurrentPlayer()
+        {
+            return _currentPlayer;
         }
 
         public IFieldService GetCurrentPlayerFieldService()
         {
-            return CurrentPlayer == Player.Player1 ? _player1FieldService : _player2FieldService;
+            return _currentPlayer == Player.Player1 ? _player1FieldService : _player2FieldService;
         }
 
         public IFieldService GetOpponentFieldService()
         {
-            return CurrentPlayer == Player.Player1 ? _player2FieldService : _player1FieldService;
+            return _currentPlayer == Player.Player1 ? _player2FieldService : _player1FieldService;
         }
 
-        public void Attack(Point targetPosition)
+        public OperationResult<bool> Attack(Point targetPosition)
         {
             var opponentFieldService = GetOpponentFieldService();
-            var targetShip = opponentFieldService.GetShipAt(targetPosition);
+            var targetShipResult = opponentFieldService.GetShipAt(targetPosition);
 
-            if (targetShip == null)
-            {
-                Console.WriteLine("Miss! No ship at the target position.");
-                return;
-            }
+            if (!targetShipResult.IsSuccess)
+                return OperationResult<bool>.Failure("Miss! No ship at the target position.");
 
+            var targetShip = targetShipResult.Data;
             var shootingStrategy = new ShootingStrategy(opponentFieldService);
             shootingStrategy.ExecuteAction(targetShip);
 
-            if (!opponentFieldService.GetAllShips().Any())
+            var remainingShips = opponentFieldService.GetAllShips();
+            if (!remainingShips.IsSuccess || !remainingShips.Data.Any())
             {
-                Console.WriteLine($"{CurrentPlayer} wins! All opponent ships destroyed.");
-                Environment.Exit(0);
+                return OperationResult<bool>.Success(true, $"{_currentPlayer} wins! All opponent ships destroyed.");
             }
+
+            return OperationResult<bool>.Success(true);
         }
 
-        public void Heal(Point targetPosition)
+        public OperationResult<bool> Heal(Point targetPosition)
         {
             var playerFieldService = GetCurrentPlayerFieldService();
-            var targetShip = playerFieldService.GetShipAt(targetPosition);
+            var targetShipResult = playerFieldService.GetShipAt(targetPosition);
 
-            if (targetShip == null)
-            {
-                Console.WriteLine("No ship at the target position.");
-                return;
-            }
+            if (!targetShipResult.IsSuccess)
+                return OperationResult<bool>.Failure("No ship at the target position.");
 
+            var targetShip = targetShipResult.Data;
             var repairingStrategy = new RepairingStrategy();
             repairingStrategy.ExecuteAction(targetShip);
+
+            return OperationResult<bool>.Success(true);
         }
     }
 }

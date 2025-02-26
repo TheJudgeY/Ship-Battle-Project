@@ -4,7 +4,7 @@ namespace DAL.Abstractions
 {
     public interface IDataStore<T>
     {
-        OperationResult<List<T>> Load();
-        OperationResult<bool> Save(List<T> entities);
+        OperationResult<T> Load();
+        OperationResult<bool> Save(T data);
     }
 }

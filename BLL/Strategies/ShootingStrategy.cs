@@ -30,7 +30,7 @@ namespace BLL.Strategies
                     break;
                 case HealthStage.Critical:
                     Console.WriteLine($"{ship.Type} Ship at {ship.Position} has been destroyed!");
-                    _fieldService.GetAllShips().ToList().Remove(ship); // Remove ship from field
+                    _fieldService.GetAllShips().Data.ToList().Remove(ship);
                     break;
             }
         }

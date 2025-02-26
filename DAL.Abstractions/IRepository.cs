@@ -1,13 +1,14 @@
-﻿using Core.Utilities;
+﻿using Core.Enums;
+using Core.Utilities;
 
 namespace DAL.Abstractions
 {
     public interface IRepository<T>
     {
-        OperationResult<bool> Add(T entity);
-        OperationResult<T> Get(Func<T, bool> predicate);
-        OperationResult<List<T>> GetAll();
-        OperationResult<bool> Remove(T entity);
+        OperationResult<bool> Add(T entity, Player player);
+        OperationResult<T> Get(Func<T, bool> predicate, Player player);
+        OperationResult<List<T>> GetAll(Player player);
+        OperationResult<bool> Remove(T entity, Player player);
         OperationResult<bool> SaveChanges();
     }
 }

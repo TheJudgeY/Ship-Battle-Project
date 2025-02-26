@@ -5,8 +5,8 @@ namespace UI.Rendering
 {
     public class FieldRenderer
     {
-        private const int FieldWidth = 10;
-        private const int FieldHeight = 10;
+        public readonly int FieldWidth = 10;
+        public readonly int FieldHeight = 10;
         private readonly IShipHelper _shipHelper;
 
         public FieldRenderer(IShipHelper shipHelper)

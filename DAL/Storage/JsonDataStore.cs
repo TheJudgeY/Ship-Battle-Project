@@ -2,12 +2,12 @@
 using System.Text.Json.Serialization;
 using DAL.Abstractions;
 using Core.Utilities;
-using DAL.Converters;
 using Core.Entities;
+using Core.Converters;
 
-namespace DAL.Storage
+namespace DAL.Repositories
 {
-    public class JsonDataStore<T> : IDataStore<T>
+    public class JsonDataStore<T> : IDataStore<Dictionary<string, List<Ship>>>
     {
         private readonly string _filePath;
         private readonly JsonSerializerOptions _jsonOptions;
@@ -15,53 +15,43 @@ namespace DAL.Storage
         public JsonDataStore(string filePath)
         {
             _filePath = filePath;
-
             _jsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters =
-                {
-                    new JsonStringEnumConverter(),
-                    typeof(T) == typeof(Ship) ? new ShipJsonConverter() : null
-                }
+                Converters = { new JsonStringEnumConverter(), new ShipJsonConverter() }
             };
         }
 
-        public OperationResult<List<T>> Load()
+        public OperationResult<Dictionary<string, List<Ship>>> Load()
         {
             if (!File.Exists(_filePath))
-            {
-                return OperationResult<List<T>>.Success(new List<T>());
-            }
+                return OperationResult<Dictionary<string, List<Ship>>>.Success(new Dictionary<string, List<Ship>>());
 
             try
             {
                 var jsonData = File.ReadAllText(_filePath);
-                var data = JsonSerializer.Deserialize<List<T>>(jsonData, _jsonOptions);
-                return OperationResult<List<T>>.Success(data ?? new List<T>());
+                var data = JsonSerializer.Deserialize<Dictionary<string, List<Ship>>>(jsonData, _jsonOptions)
+                           ?? new Dictionary<string, List<Ship>>();
+
+                return OperationResult<Dictionary<string, List<Ship>>>.Success(data);
             }
             catch (Exception ex)
             {
-                return OperationResult<List<T>>.Failure($"Error loading data: {ex.Message}");
+                return OperationResult<Dictionary<string, List<Ship>>>.Failure($"Failed to load data: {ex.Message}");
             }
         }
 
-        public OperationResult<bool> Save(List<T> entities)
+        public OperationResult<bool> Save(Dictionary<string, List<Ship>> data)
         {
             try
             {
-                string tempFile = _filePath + ".tmp";
-                string jsonData = JsonSerializer.Serialize(entities, _jsonOptions);
-
-                File.WriteAllText(tempFile, jsonData);
-                File.Replace(tempFile, _filePath, null);
-
+                var jsonData = JsonSerializer.Serialize(data, _jsonOptions);
+                File.WriteAllText(_filePath, jsonData);
                 return OperationResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                return OperationResult<bool>.Failure($"Error saving data: {ex.Message}");
+                return OperationResult<bool>.Failure($"Failed to save data: {ex.Message}");
             }
         }
     }
