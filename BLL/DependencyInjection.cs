@@ -28,11 +28,12 @@ namespace BLL
             services.AddSingleton<IGameService>(provider =>
             {
                 var fieldServices = provider.GetServices<IFieldService>().ToList();
+                var dataStore = provider.GetRequiredService<IDataStore<Dictionary<string, List<Ship>>>>();
 
                 var player1FieldService = fieldServices[0];
                 var player2FieldService = fieldServices[1];
 
-                return new GameService(player1FieldService, player2FieldService);
+                return new GameService(player1FieldService, player2FieldService, dataStore);
             });
 
             return services;

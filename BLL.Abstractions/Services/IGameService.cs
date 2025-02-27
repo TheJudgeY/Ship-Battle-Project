@@ -13,5 +13,6 @@ namespace BLL.Abstractions.Services
         IFieldService GetOpponentFieldService();
         OperationResult<bool> Attack(Point targetPosition);
         OperationResult<bool> Heal(Point targetPosition);
+        void ClearGameData();
     }
 }

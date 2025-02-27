@@ -1,29 +1,32 @@
 ﻿using BLL.Abstractions.Strategies;
 using Core.Entities;
 using Core.Enums;
+using Core.Utilities;
 
 namespace BLL.Strategies
 {
     public class RepairingStrategy : IActionStrategy
     {
-        public void ExecuteAction(Ship ship)
+        public OperationResult<bool> ExecuteAction(Ship ship)
         {
-            if (ship == null) throw new ArgumentNullException(nameof(ship));
+            if (ship == null)
+                return OperationResult<bool>.Failure("Invalid ship: Ship is null.");
 
             switch (ship.Health)
             {
                 case HealthStage.Critical:
                     ship.Health = HealthStage.Damaged;
-                    Console.WriteLine($"Repaired {ship.Type} Ship at {ship.Position} to Damaged state.");
-                    break;
+                    return OperationResult<bool>.Success(true);
+
                 case HealthStage.Damaged:
                     ship.Health = HealthStage.FullHealth;
-                    Console.WriteLine($"Repaired {ship.Type} Ship at {ship.Position} to Full Health.");
-                    break;
+                    return OperationResult<bool>.Success(true);
+
                 case HealthStage.FullHealth:
-                    Console.WriteLine($"{ship.Type} Ship at {ship.Position} is already at Full Health!");
-                    break;
+                    return OperationResult<bool>.Failure("Ship is already at Full Health.");
             }
+
+            return OperationResult<bool>.Failure("Unknown repair issue.");
         }
     }
 }

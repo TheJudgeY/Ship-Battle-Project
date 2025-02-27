@@ -20,14 +20,18 @@ namespace Core.Converters
 
             var position = new Point(posX, posY);
             var direction = Enum.Parse<Direction>(root.GetProperty("Direction").GetString());
+            var health = Enum.Parse<HealthStage>(root.GetProperty("Health").GetString());
 
-            return type switch
+            Ship ship = type switch
             {
                 "Military" => new MilitaryShip(position, direction),
                 "Auxiliary" => new AuxiliaryShip(position, direction),
                 "Mixed" => new MixedShip(position, direction),
-                _ => throw new JsonException("Unknown ship type")
+                _ => throw new JsonException($"Unknown ship type: {type}")
             };
+
+            ship.Health = health;
+            return ship;
         }
 
         public override void Write(Utf8JsonWriter writer, Ship value, JsonSerializerOptions options)

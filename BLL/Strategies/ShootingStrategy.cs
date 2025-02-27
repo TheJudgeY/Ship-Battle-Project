@@ -2,6 +2,7 @@
 using BLL.Abstractions.Strategies;
 using Core.Entities;
 using Core.Enums;
+using Core.Utilities;
 
 namespace BLL.Strategies
 {
@@ -14,24 +15,30 @@ namespace BLL.Strategies
             _fieldService = fieldService;
         }
 
-        public void ExecuteAction(Ship ship)
+        public OperationResult<bool> ExecuteAction(Ship ship)
         {
-            if (ship == null) throw new ArgumentNullException(nameof(ship));
+            if (ship == null)
+                return OperationResult<bool>.Failure("Ship does not exist at the given location.");
 
             switch (ship.Health)
             {
                 case HealthStage.FullHealth:
                     ship.Health = HealthStage.Damaged;
-                    Console.WriteLine($"{ship.Type} Ship at {ship.Position} has been damaged!");
-                    break;
+                    return OperationResult<bool>.Success(true);
+
                 case HealthStage.Damaged:
                     ship.Health = HealthStage.Critical;
-                    Console.WriteLine($"{ship.Type} Ship at {ship.Position} is now in critical condition!");
-                    break;
+                    return OperationResult<bool>.Success(true);
+
                 case HealthStage.Critical:
-                    Console.WriteLine($"{ship.Type} Ship at {ship.Position} has been destroyed!");
-                    _fieldService.GetAllShips().Data.ToList().Remove(ship);
-                    break;
+                    var removalResult = _fieldService.RemoveShip(ship.Position);
+                    if (!removalResult.IsSuccess)
+                        return OperationResult<bool>.Failure($"Failed to remove ship: {removalResult.Message}");
+
+                    return OperationResult<bool>.Success(true);
+
+                default:
+                    return OperationResult<bool>.Failure("Unexpected ship health state.");
             }
         }
     }

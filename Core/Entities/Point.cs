@@ -10,15 +10,5 @@
             X = x;
             Y = y;
         }
-
-        public double DistanceFromCenter()
-        {
-            return Math.Sqrt(X * X + Y * Y);
-        }
-
-        public override string ToString()
-        {
-            return $"({X}, {Y})";
-        }
     }
 }

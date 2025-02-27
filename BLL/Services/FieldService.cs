@@ -42,7 +42,7 @@ namespace BLL.Services
                 return OperationResult<bool>.Failure($"Failed to add ship: {saveResult.Message}");
 
             _field.Ships.Add(ship);
-            return _shipRepository.SaveChanges();
+            return SaveChanges();
         }
 
         public OperationResult<Ship> GetShipAt(Point position)
@@ -80,7 +80,7 @@ namespace BLL.Services
                 return OperationResult<bool>.Failure($"Failed to remove ship: {removeResult.Message}");
 
             _field.Ships.Remove(ship);
-            return _shipRepository.SaveChanges();
+            return SaveChanges();
         }
 
         public OperationResult<bool> IsValidPlacement(int x, int y, Direction direction, int shipLength, int fieldWidth, int fieldHeight)
@@ -104,12 +104,51 @@ namespace BLL.Services
                     return OperationResult<bool>.Failure($"Out of bounds at ({projectedX}, {projectedY})");
             }
 
+            var allOccupiedPoints = new HashSet<Point>();
+
             foreach (var existingShip in _shipRepository.GetAll(_currentPlayer).Data ?? new List<Ship>())
             {
-                var existingOccupiedPoints = _shipHelper.GetOccupiedPoints(existingShip).ToList();
-                if (occupiedPoints.Intersect(existingOccupiedPoints).Any())
-                    return OperationResult<bool>.Failure($"Overlapping existing ship at {occupiedPoints.First()}");
+                var shipPoints = _shipHelper.GetOccupiedPoints(existingShip).ToList();
+
+                foreach (var point in shipPoints)
+                {
+                    allOccupiedPoints.Add(point);
+
+                    foreach (var neighbor in GetSurroundingPoints(point, fieldWidth, fieldHeight))
+                    {
+                        allOccupiedPoints.Add(neighbor);
+                    }
+                }
             }
+
+            if (occupiedPoints.Any(p => allOccupiedPoints.Contains(p)))
+                return OperationResult<bool>.Failure($"Overlapping or too close to an existing ship at {occupiedPoints.First()}");
+
+            return OperationResult<bool>.Success(true);
+        }
+
+        private List<Point> GetSurroundingPoints(Point point, int fieldWidth, int fieldHeight)
+        {
+            var adjacentPoints = new List<Point>
+            {
+                new Point(point.X - 1, point.Y - 1),
+                new Point(point.X, point.Y - 1),
+                new Point(point.X + 1, point.Y - 1),
+                new Point(point.X - 1, point.Y),
+                new Point(point.X + 1, point.Y),
+                new Point(point.X - 1, point.Y + 1),
+                new Point(point.X, point.Y + 1),
+                new Point(point.X + 1, point.Y + 1)
+            };
+
+            return adjacentPoints.Where(p => p.X >= 0 && p.X < fieldWidth && p.Y >= 0 && p.Y < fieldHeight).ToList();
+        }
+
+        public OperationResult<bool> SaveChanges()
+        {
+            var saveResult = _shipRepository.SaveChanges();
+            if (!saveResult.IsSuccess)
+                return OperationResult<bool>.Failure($"Failed to save game state: {saveResult.Message}");
 
             return OperationResult<bool>.Success(true);
         }

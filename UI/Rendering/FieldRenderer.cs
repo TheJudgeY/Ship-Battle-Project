@@ -18,18 +18,26 @@ namespace UI.Rendering
         {
             Console.WriteLine($"\n{title}:");
 
+            Console.Write("   ");
+            for (int x = 0; x < FieldWidth; x++)
+            {
+                Console.Write(x + " ");
+            }
+            Console.WriteLine();
+
             for (int y = 0; y < FieldHeight; y++)
             {
+                Console.Write(y.ToString().PadLeft(2) + " ");
+
                 for (int x = 0; x < FieldWidth; x++)
                 {
-                    var cell = GetCellRepresentation(field, x, y);
-                    Console.Write(cell + " ");
+                    RenderCell(field, x, y);
                 }
                 Console.WriteLine();
             }
         }
 
-        private char GetCellRepresentation(Field field, int x, int y)
+        private void RenderCell(Field field, int x, int y)
         {
             foreach (var ship in field.Ships)
             {
@@ -37,17 +45,46 @@ namespace UI.Rendering
                 {
                     if (point.X == x && point.Y == y)
                     {
-                        return ship.Health switch
-                        {
-                            Core.Enums.HealthStage.FullHealth => 'O',
-                            Core.Enums.HealthStage.Damaged => 'H',
-                            Core.Enums.HealthStage.Critical => 'C',
-                            _ => 'O'
-                        };
+                        SetShipColor(ship.Health);
+                        Console.Write(GetShipSymbol(ship.Health) + " ");
+                        Console.ResetColor();
+                        return;
                     }
                 }
             }
-            return '~';
+
+            Console.Write("~ ");
         }
+
+        private void SetShipColor(Core.Enums.HealthStage health)
+        {
+            switch (health)
+            {
+                case Core.Enums.HealthStage.FullHealth:
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    break;
+                case Core.Enums.HealthStage.Damaged:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    break;
+                case Core.Enums.HealthStage.Critical:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+                default:
+                    Console.ResetColor();
+                    break;
+            }
+        }
+
+        private char GetShipSymbol(Core.Enums.HealthStage health)
+        {
+            return health switch
+            {
+                Core.Enums.HealthStage.FullHealth => 'O', // 🟢 Full Health
+                Core.Enums.HealthStage.Damaged => 'H', // 🟡 Damaged
+                Core.Enums.HealthStage.Critical => 'C', // 🔴 Critical
+                _ => 'O'
+            };
+        }
+
     }
 }

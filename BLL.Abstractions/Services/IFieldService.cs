@@ -12,5 +12,6 @@ namespace BLL.Abstractions.Services
         OperationResult<bool> IsValidPlacement(int x, int y, Direction direction, int shipLength, int fieldWidth, int fieldHeight);
         OperationResult<bool> RemoveShip(Point position);
         Field GetField();
+        OperationResult<bool> SaveChanges();
     }
 }

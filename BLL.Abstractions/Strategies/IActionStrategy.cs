@@ -1,9 +1,10 @@
 ﻿using Core.Entities;
+using Core.Utilities;
 
 namespace BLL.Abstractions.Strategies
 {
     public interface IActionStrategy
     {
-        void ExecuteAction(Ship ship);
+        OperationResult<bool> ExecuteAction(Ship ship);
     }
 }

@@ -36,6 +36,7 @@ namespace UI
                 Console.WriteLine("No previous session found. Starting a new game...");
                 SetupPlayerField(Player.Player1);
                 SetupPlayerField(Player.Player2);
+                _gameService.SetCurrentPlayer(Player.Player1);
             }
 
             PlayGameLoop();
@@ -53,7 +54,16 @@ namespace UI
             {
                 Console.WriteLine("Do you want to continue the previous session? (Y/N)");
                 string choice = Console.ReadLine()?.Trim().ToUpper();
-                return choice == "Y";
+                if (choice == "Y")
+                {
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Starting a new game...");
+                    _gameService.ClearGameData();
+                    return false;
+                }
             }
 
             return false;
@@ -71,6 +81,7 @@ namespace UI
                 Console.WriteLine("1. Attack");
                 Console.WriteLine("2. Heal");
                 Console.WriteLine("3. End Turn");
+                Console.WriteLine("4. Exit");
 
                 string action = Console.ReadLine();
 
@@ -85,6 +96,9 @@ namespace UI
                     case "3":
                         EndTurn();
                         break;
+                    case "4":
+                        ExitGame();
+                        return;
                     default:
                         Console.WriteLine("Invalid choice! Try again.");
                         break;
@@ -108,7 +122,8 @@ namespace UI
             Console.Clear();
             Console.WriteLine($"Player {player}, set up your fleet.");
 
-            var fieldService = player == Player.Player1 ? _gameService.GetCurrentPlayerFieldService() : _gameService.GetOpponentFieldService();
+            _gameService.SetCurrentPlayer(player);
+            var fieldService = _gameService.GetCurrentPlayerFieldService();
             int fieldWidth = 10, fieldHeight = 10;
 
             int shipsToPlace = 3;
@@ -118,7 +133,7 @@ namespace UI
                 Console.Clear();
                 Console.WriteLine($"Placing ship {i + 1}...");
 
-                Ship ship = CreateShipWithVisuals(fieldService);
+                Ship ship = CreateShipWithTypeSelection(fieldService);
                 if (ship == null)
                 {
                     Console.WriteLine("Invalid ship placement, try again.");
@@ -142,11 +157,36 @@ namespace UI
             Console.ReadKey();
         }
 
-        private Ship CreateShipWithVisuals(IFieldService fieldService)
+        private Ship CreateShipWithTypeSelection(IFieldService fieldService)
+        {
+            Console.Clear();
+            Console.WriteLine("Select ship type:");
+            Console.WriteLine("1. Military (Attack Only) - 3 spaces");
+            Console.WriteLine("2. Auxiliary (Heal Only) - 2 spaces");
+            Console.WriteLine("3. Mixed (Attack & Heal) - 4 spaces");
+
+            string choice = Console.ReadLine();
+            int shipLength = choice switch
+            {
+                "1" => 3,
+                "2" => 2,
+                "3" => 4,
+                _ => -1
+            };
+
+            if (shipLength == -1)
+            {
+                Console.WriteLine("Invalid choice. Try again.");
+                return null;
+            }
+
+            return CreateShipWithVisuals(fieldService, shipLength);
+        }
+
+        private Ship CreateShipWithVisuals(IFieldService fieldService, int shipLength)
         {
             int x = 0, y = 0;
             Direction direction = Direction.East;
-            int shipLength = 3;
             bool placing = true;
 
             while (placing)
@@ -188,23 +228,17 @@ namespace UI
                 }
             }
 
-            Console.WriteLine("Select ship type:");
-            Console.WriteLine("1. Military (Attack Only)");
-            Console.WriteLine("2. Auxiliary (Heal Only)");
-            Console.WriteLine("3. Mixed (Attack & Heal)");
-
-            string choice = Console.ReadLine();
-            string shipType = choice switch
+            string shipType = shipLength switch
             {
-                "1" => "military",
-                "2" => "auxiliary",
-                "3" => "mixed",
+                3 => "military",
+                2 => "auxiliary",
+                4 => "mixed",
                 _ => null
             };
 
             if (shipType == null)
             {
-                Console.WriteLine("Invalid choice.");
+                Console.WriteLine("Invalid ship selection.");
                 return null;
             }
 
@@ -221,7 +255,7 @@ namespace UI
             var shipsResult = fieldService.GetAllShips();
             if (!shipsResult.IsSuccess || shipsResult.Data == null)
             {
-                Console.WriteLine("⚠️ Error: Unable to retrieve ships.");
+                Console.WriteLine("Error: Unable to retrieve ships.");
                 return;
             }
 
@@ -268,7 +302,7 @@ namespace UI
                         }
                     }
 
-                    var placementCheck = fieldService.IsValidPlacement(x, y, direction, shipLength, 10, 10);
+                    var placementCheck = fieldService.IsValidPlacement(cursorX, cursorY, direction, shipLength, 10, 10);
                     bool isValidPlacement = placementCheck.IsSuccess;
 
                     if (isShipPart && isValidPlacement)
@@ -296,10 +330,19 @@ namespace UI
             }
         }
 
-        private void RenderFields()
+        private void RenderFields(string message = null)
         {
             Console.Clear();
+
             Console.WriteLine($"Current Player: {_gameService.GetCurrentPlayer()}");
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(message);
+                Console.ResetColor();
+            }
+
             _fieldRenderer.RenderField(_gameService.GetCurrentPlayerFieldService().GetField(), "Your Field");
             _fieldRenderer.RenderField(_gameService.GetOpponentFieldService().GetField(), "Opponent's Field");
         }
@@ -320,16 +363,21 @@ namespace UI
             if (!attackResult.IsSuccess)
             {
                 Console.WriteLine($"Missed! {attackResult.Message}");
-            }
-            else if (attackResult.Message != null)
-            {
-                Console.WriteLine(attackResult.Message);
-                Console.WriteLine("Game Over!");
-                Environment.Exit(0);
+                Console.ReadKey();
             }
             else
             {
                 Console.WriteLine("Hit!");
+                Console.ReadKey();
+            }
+
+            if (attackResult.Message?.Contains("wins!") == true)
+            {
+                Console.WriteLine(attackResult.Message);
+                Console.WriteLine("Game Over!");
+                Console.ReadKey();
+
+                PromptForRestartOrExit();
             }
 
             RenderFields();
@@ -348,14 +396,8 @@ namespace UI
             var healPosition = new Point(x, y);
             var healResult = _gameService.Heal(healPosition);
 
-            if (!healResult.IsSuccess)
-            {
-                Console.WriteLine($"Healing failed: {healResult.Message}");
-            }
-            else
-            {
-                Console.WriteLine("Ship healed!");
-            }
+            Console.WriteLine(healResult.Message ?? "Healing action performed.");
+            Console.ReadKey();
 
             RenderFields();
         }
@@ -365,6 +407,55 @@ namespace UI
             _gameService.SwitchTurn();
             RenderFields();
             SaveGameState();
+        }
+
+        private void PromptForRestartOrExit()
+        {
+            Console.Clear();
+            Console.WriteLine("Would you like to start a new game? (Y/N)");
+
+            while (true)
+            {
+                string choice = Console.ReadLine()?.Trim().ToUpper();
+
+                if (choice == "Y")
+                {
+                    RestartGame();
+                    break;
+                }
+                else if (choice == "N")
+                {
+                    ExitGame();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid choice. Please enter 'Y' to restart or 'N' to exit.");
+                }
+            }
+        }
+
+        private void ExitGame()
+        {
+            Console.WriteLine("Thanks for playing! Press any key to exit...");
+            Console.ReadKey();
+            Environment.Exit(0);
+        }
+
+        private void RestartGame()
+        {
+            Console.Clear();
+            Console.WriteLine("Starting a new game...");
+
+            var player1FieldService = _gameService.GetCurrentPlayerFieldService();
+            var player2FieldService = _gameService.GetOpponentFieldService();
+
+            player1FieldService.GetField().Ships.Clear();
+            player2FieldService.GetField().Ships.Clear();
+
+            SetupPlayerField(Player.Player1);
+            SetupPlayerField(Player.Player2);
+
+            PlayGameLoop();
         }
     }
 }
