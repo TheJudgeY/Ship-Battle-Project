@@ -14,7 +14,7 @@ namespace UI.Rendering
             _shipHelper = shipHelper;
         }
 
-        public void RenderField(Field field, string title)
+        public void RenderField(Field field, string title, bool isOpponentField = false)
         {
             Console.WriteLine($"\n{title}:");
 
@@ -31,13 +31,13 @@ namespace UI.Rendering
 
                 for (int x = 0; x < FieldWidth; x++)
                 {
-                    RenderCell(field, x, y);
+                    RenderCell(field, x, y, isOpponentField);
                 }
                 Console.WriteLine();
             }
         }
 
-        private void RenderCell(Field field, int x, int y)
+        private void RenderCell(Field field, int x, int y, bool isOpponentField)
         {
             foreach (var ship in field.Ships)
             {
@@ -45,6 +45,12 @@ namespace UI.Rendering
                 {
                     if (point.X == x && point.Y == y)
                     {
+                        if (isOpponentField && ship.Health == Core.Enums.HealthStage.FullHealth)
+                        {
+                            Console.Write("~ ");
+                            return;
+                        }
+
                         SetShipColor(ship.Health);
                         Console.Write(GetShipSymbol(ship.Health) + " ");
                         Console.ResetColor();
@@ -79,9 +85,9 @@ namespace UI.Rendering
         {
             return health switch
             {
-                Core.Enums.HealthStage.FullHealth => 'O', // 🟢 Full Health
-                Core.Enums.HealthStage.Damaged => 'H', // 🟡 Damaged
-                Core.Enums.HealthStage.Critical => 'C', // 🔴 Critical
+                Core.Enums.HealthStage.FullHealth => 'O',
+                Core.Enums.HealthStage.Damaged => 'H',
+                Core.Enums.HealthStage.Critical => 'C',
                 _ => 'O'
             };
         }

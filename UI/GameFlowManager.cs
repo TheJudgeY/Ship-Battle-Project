@@ -80,31 +80,34 @@ namespace UI
                 Console.WriteLine("Choose an action: ");
                 Console.WriteLine("1. Attack");
                 Console.WriteLine("2. Heal");
-                Console.WriteLine("3. End Turn");
-                Console.WriteLine("4. Exit");
+                Console.WriteLine("3. Exit Game");
 
                 string action = Console.ReadLine();
+
+                bool turnConsumed = false;
 
                 switch (action)
                 {
                     case "1":
-                        PerformAttack();
+                        turnConsumed = PerformAttack();
                         break;
                     case "2":
-                        PerformHeal();
+                        turnConsumed = PerformHeal();
                         break;
                     case "3":
-                        EndTurn();
+                        Environment.Exit(0);
                         break;
-                    case "4":
-                        ExitGame();
-                        return;
                     default:
                         Console.WriteLine("Invalid choice! Try again.");
                         break;
                 }
 
-                SaveGameState();
+                if (turnConsumed)
+                {
+                    _gameService.SwitchTurn();
+                    SaveGameState();
+                    RenderFields();
+                }
             }
         }
 
@@ -333,7 +336,6 @@ namespace UI
         private void RenderFields(string message = null)
         {
             Console.Clear();
-
             Console.WriteLine($"Current Player: {_gameService.GetCurrentPlayer()}");
 
             if (!string.IsNullOrEmpty(message))
@@ -343,18 +345,18 @@ namespace UI
                 Console.ResetColor();
             }
 
-            _fieldRenderer.RenderField(_gameService.GetCurrentPlayerFieldService().GetField(), "Your Field");
-            _fieldRenderer.RenderField(_gameService.GetOpponentFieldService().GetField(), "Opponent's Field");
+            _fieldRenderer.RenderField(_gameService.GetCurrentPlayerFieldService().GetField(), "Your Field", false);
+            _fieldRenderer.RenderField(_gameService.GetOpponentFieldService().GetField(), "Opponent's Field", true);
         }
 
-        private void PerformAttack()
+        private bool PerformAttack()
         {
             Console.WriteLine("Enter target coordinates (x y): ");
             var input = Console.ReadLine().Split();
             if (input.Length != 2 || !int.TryParse(input[0], out int x) || !int.TryParse(input[1], out int y))
             {
                 Console.WriteLine("Invalid input! Please enter two numbers separated by space.");
-                return;
+                return false;
             }
 
             var targetPosition = new Point(x, y);
@@ -373,40 +375,38 @@ namespace UI
 
             if (attackResult.Message?.Contains("wins!") == true)
             {
-                Console.WriteLine(attackResult.Message);
                 Console.WriteLine("Game Over!");
                 Console.ReadKey();
-
                 PromptForRestartOrExit();
             }
 
-            RenderFields();
+            return true;
         }
 
-        private void PerformHeal()
+        private bool PerformHeal()
         {
             Console.WriteLine("Enter heal coordinates (x y): ");
             var input = Console.ReadLine().Split();
             if (input.Length != 2 || !int.TryParse(input[0], out int x) || !int.TryParse(input[1], out int y))
             {
                 Console.WriteLine("Invalid input! Please enter two numbers separated by space.");
-                return;
+                return false;
             }
 
             var healPosition = new Point(x, y);
             var healResult = _gameService.Heal(healPosition);
 
-            Console.WriteLine(healResult.Message ?? "Healing action performed.");
+            if (!healResult.IsSuccess)
+            {
+                Console.WriteLine($"Healing failed: {healResult.Message}");
+                Console.ReadKey();
+                return false;
+            }
+
+            Console.WriteLine(healResult.Message ?? "Ship healed!");
             Console.ReadKey();
 
-            RenderFields();
-        }
-
-        private void EndTurn()
-        {
-            _gameService.SwitchTurn();
-            RenderFields();
-            SaveGameState();
+            return true;
         }
 
         private void PromptForRestartOrExit()
